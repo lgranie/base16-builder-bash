@@ -1,0 +1,6 @@
+[submodule "schemes/base16-gruvbox-scheme"]
+	path = schemes/base16-gruvbox-scheme
+	url = https://github.com/dawikur/base16-gruvbox-scheme.git
+[submodule "templates/base16-shell"]
+	path = templates/base16-shell
+	url = https://github.com/chriskempson/base16-shell.git
