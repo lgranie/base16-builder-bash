@@ -1,0 +1,15 @@
+--2019-05-27 09:46:16--  https://git.io/get-mo
+Resolving httppxgot.srv.volvo.com (httppxgot.srv.volvo.com)... 153.112.38.10, 153.112.38.30
+Connecting to httppxgot.srv.volvo.com (httppxgot.srv.volvo.com)|153.112.38.10|:8080... connected.
+Proxy request sent, awaiting response... 302 Found
+Location: https://raw.githubusercontent.com/tests-always-included/mo/master/mo [following]
+--2019-05-27 09:46:17--  https://raw.githubusercontent.com/tests-always-included/mo/master/mo
+Connecting to httppxgot.srv.volvo.com (httppxgot.srv.volvo.com)|153.112.38.10|:8080... connected.
+Proxy request sent, awaiting response... 200 OK
+Length: 31807 (31K) [text/plain]
+Saving to: ‘get-mo’
+
+     0K .......... .......... .......... .                    100%  191K=0.2s
+
+2019-05-27 09:46:18 (191 KB/s) - ‘get-mo’ saved [31807/31807]
+
