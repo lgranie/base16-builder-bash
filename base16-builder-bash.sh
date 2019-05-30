@@ -14,28 +14,40 @@ function parse_yaml {
       vname[indent] = $2;
       for (i in vname) {if (i > indent) {delete vname[i]}}
       if (length($3) > 0) {
-         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
-         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(toupper(vname[i]))("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, toupper($2), $3);
       }
    }'
 }
 
 # create variables set for mustache
 function parse_scheme_options {
-  printf "scheme-name=\"${SCHEME_scheme}\"\n";
-  printf "scheme-author=\"${SCHEME_author}\"\n";
+  printf "SCHEME_NAME=\"${SCHEME_SCHEME}\"\n";
+  printf "SCHEME_AUTHOR=\"${SCHEME_AUTHOR}\"\n";
   
   for n in $(seq 0 15); do
-     hex=$(printf "%02X" $n)
-     scheme_var="SCHEME_base$hex"
+     scheme_var="SCHEME_BASE${hex}"
 
-     # print hex color value
-     printf "base$hex=\"${!scheme_var}\"\n"
-     printf "base$hex-hex-r=\"%02X\"\n" 0x${!scheme_var:0:2} 
-     printf "base$hex-hex-g=\"%02X\"\n" 0x${!scheme_var:2:2} 
-     printf "base$hex-hex-b=\"%02X\"\n" 0x${!scheme_var:4:2}
+     # print hex colour value
+     hex=$(printf "%02X" $n)
+     printf "BASE${hex}=\"${!scheme_var}\"\n"
+     printf "BASE${hex}_HEX_R=\"%02X\"\n" 0x${!scheme_var:0:2} 
+     printf "BASE${hex}_HEX_G=\"%02X\"\n" 0x${!scheme_var:2:2} 
+     printf "BASE${hex}_HEX_B=\"%02X\"\n" 0x${!scheme_var:4:2}
+
+     # print dec colour value
+     dec=$(printf "%02d" $((16#$n)))
+     printf "BASE${dec}_DEC_R=\"%02d\"\n" $((16#${!scheme_var:0:2}))
+     printf "BASE${dec}_DEC_G=\"%02d\"\n" $((16#${!scheme_var:2:2}))
+     printf "BASE${dec}_DEC_B=\"%02d\"\n" $((16#${!scheme_var:4:2}))
   done
 }
 
+function shellify_base16_template () {
+  sed -e ':a' -e 's|{{\([^}]*\)-|{{\1_|;t a' -e 's|{{\([^}]*\)|{{\U\1|g' $1
+}
+
 eval $(parse_yaml $1 "SCHEME_")
-eval "env '$(parse_scheme_options)' ./lib/mo $2"
+eval $(parse_scheme_options)
+#$(shellify_base16_template $2) | ./lib/mo
+
