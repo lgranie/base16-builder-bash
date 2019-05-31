@@ -22,24 +22,28 @@ function parse_yaml {
 
 # create variables set for mustache
 function parse_scheme_options {
-  printf "SCHEME_NAME=\"${SCHEME_SCHEME}\"\n";
-  printf "SCHEME_AUTHOR=\"${SCHEME_AUTHOR}\"\n";
+  printf "export SCHEME_NAME=\"${SCHEME_SCHEME}\"\n";
+  printf "export SCHEME_AUTHOR=\"${SCHEME_AUTHOR}\"\n";
   
   for n in $(seq 0 15); do
+     hex=$(printf "%02X" ${n})
      scheme_var="SCHEME_BASE${hex}"
 
-     # print hex colour value
-     hex=$(printf "%02X" $n)
-     printf "BASE${hex}=\"${!scheme_var}\"\n"
-     printf "BASE${hex}_HEX_R=\"%02X\"\n" 0x${!scheme_var:0:2} 
-     printf "BASE${hex}_HEX_G=\"%02X\"\n" 0x${!scheme_var:2:2} 
-     printf "BASE${hex}_HEX_B=\"%02X\"\n" 0x${!scheme_var:4:2}
+     # print HEX colour value
+     printf "export BASE${hex}=\"${!scheme_var}\"\n"
+     printf "export BASE${hex}_HEX_R=\"%02X\"\n" 0x${!scheme_var:0:2} 
+     printf "export BASE${hex}_HEX_G=\"%02X\"\n" 0x${!scheme_var:2:2} 
+     printf "export BASE${hex}_HEX_B=\"%02X\"\n" 0x${!scheme_var:4:2}
 
-     # print dec colour value
-     dec=$(printf "%02d" $((16#$n)))
-     printf "BASE${dec}_DEC_R=\"%02d\"\n" $((16#${!scheme_var:0:2}))
-     printf "BASE${dec}_DEC_G=\"%02d\"\n" $((16#${!scheme_var:2:2}))
-     printf "BASE${dec}_DEC_B=\"%02d\"\n" $((16#${!scheme_var:4:2}))
+     # print RGB colour value
+     printf "export BASE${hex}_RGB_R=\"%02d\"\n" $((16#${!scheme_var:0:2}))
+     printf "export BASE${hex}_RGB_G=\"%02d\"\n" $((16#${!scheme_var:2:2}))
+     printf "export BASE${hex}_RGB_B=\"%02d\"\n" $((16#${!scheme_var:4:2}))
+     
+     # print DEC colour value
+     printf "export BASE${hex}_DEC_R=\"%.4f\"\n" $(bc -l <<< "$((16#${!scheme_var:0:2})) / 255")
+     printf "export BASE${hex}_DEC_G=\"%.4f\"\n" $(bc -l <<< "$((16#${!scheme_var:2:2})) / 255")
+     printf "export BASE${hex}_DEC_B=\"%.4f\"\n" $(bc -l <<< "$((16#${!scheme_var:4:2})) / 255")
   done
 }
 
@@ -49,5 +53,7 @@ function shellify_base16_template () {
 
 eval $(parse_yaml $1 "SCHEME_")
 eval $(parse_scheme_options)
-#$(shellify_base16_template $2) | ./lib/mo
+shellify_base16_template $2 > /tmp/template
+env
+./lib/mo /tmp/template
 
