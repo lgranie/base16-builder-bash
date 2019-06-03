@@ -1,7 +1,45 @@
 #!/usr/bin/env bash
 
+function usage() {
+  printf "base16-builder-bash -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR]\n"
+}
+
+if [ $# -eq 0 ]; then
+  usage
+fi
+
+# parse arguments from https://stackoverflow.com/questions/192249/
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage;
+      exit 0;;
+    -s|--scheme)
+      SCHEME="$2";
+      shift 2;;
+    -t|--template)
+      TEMPLATE="$2";
+      shift 2;;
+    -o|--output)
+      OUTPUT_DIR="$2";
+      shift 2;;
+  esac;
+done
+
+# default values and additionnals arguments
+if [ -z $SCHEME ]; then
+  SCHEME_FILE="ALL";
+else
+  SCHEME_FILE=$(find schemes/ -name "${SCHEME}*" -print)
+fi
+
+# analyse TEMPLATE
+if [ -z $TEMPLATE ]; then
+  TEMPLATE="ALL";
+fi
+
 # function found here https://stackoverflow.com/questions/5014632/
-# remove comment with https:/:stackoverflow.com/questions/4798149/
+# remove comment with https://stackoverflow.com/questions/4798149/
 function parse_yaml {
    local prefix=$2
    local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
@@ -26,8 +64,8 @@ function parse_scheme_options {
   printf "export SCHEME_AUTHOR=\"${SCHEME_AUTHOR}\"\n";
   
   for n in $(seq 0 15); do
-     hex=$(printf "%02X" ${n})
-     scheme_var="SCHEME_BASE${hex}"
+     local hex=$(printf "%02X" ${n})
+     local scheme_var="SCHEME_BASE${hex}"
 
      # print HEX colour value
      printf "export BASE${hex}=\"${!scheme_var}\"\n"
@@ -47,13 +85,26 @@ function parse_scheme_options {
   done
 }
 
+# uppercasing variables names
+# replace '-' with '_' in variables names
 function shellify_base16_template () {
-  sed -e ':a' -e 's|{{\([^}]*\)-|{{\1_|;t a' -e 's|{{\([^}]*\)|{{\U\1|g' $1
+  sed -e ":a" -e "s|{{\([^}]*\)-|{{\1_|;t a" \
+      -e "s|{{\([^}]*\)|{{\U\1|g" $1
 }
 
-eval $(parse_yaml $1 "SCHEME_")
+# read $TEMPLATE extension
+function get_extension() {
+  TEMPLATE_CONFIG="templates/"${TEMPLATE}"/templates/config.yaml"
+  parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_"
+  echo ${TEMPLATE_DEFAULT_EXTENSION}
+}
+
+eval $(parse_yaml ${SCHEME_FILE} "SCHEME_")
 eval $(parse_scheme_options)
-shellify_base16_template $2 > /tmp/template
-env
-./lib/mo /tmp/template
+
+EXTENSION=$(get_extension ${TEMPLATE})
+echo ${EXTENSION}
+exit 0
+shellify_base16_template $TEMPLATE > /tmp/template
+./lib/mo /tmp/template > ${TEMPLATE}.${EXTENSION}
 
