@@ -68,7 +68,7 @@ function parse_scheme_options {
      local scheme_var="SCHEME_BASE${hex}"
 
      # print HEX colour value
-     printf "export BASE${hex}=\"${!scheme_var}\"\n"
+     printf "export BASE${hex}_HEX=\"${!scheme_var}\"\n"
      printf "export BASE${hex}_HEX_R=\"%02X\"\n" 0x${!scheme_var:0:2} 
      printf "export BASE${hex}_HEX_G=\"%02X\"\n" 0x${!scheme_var:2:2} 
      printf "export BASE${hex}_HEX_B=\"%02X\"\n" 0x${!scheme_var:4:2}
@@ -94,16 +94,32 @@ function shellify_base16_template () {
 
 # read $TEMPLATE extension
 function get_extension() {
-  TEMPLATE_CONFIG="templates/base16-"${TEMPLATE}"/templates/config.yaml"
+  TEMPLATE_CONFIG="templates/base16-"$1"/templates/config.yaml"
   eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_")
   printf "%s\n" ${TEMPLATE_DEFAULT_EXTENSION}
 }
 
+# generate template
+function generate_template () {
+  EXTENSION=$(get_extension $1)
+  TEMPLATE_FILE="templates/base16-"$1"/templates/default.mustache"
+  shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
+  ./lib/mo /tmp/template > ${SCHEME}${EXTENSION}
+}
+
+# load scheme file
 eval $(parse_yaml ${SCHEME_FILE} "SCHEME_")
+
+# generate mustache variables
 eval $(parse_scheme_options)
 
-EXTENSION=$(get_extension ${TEMPLATE})
-TEMPLATE_FILE="templates/base16-"${TEMPLATE}"/templates/default.mustache"
-shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
-./lib/mo /tmp/template > ${SCHEME}${EXTENSION}
-
+# generate template(s)
+if [[ ${TEMPLATE} -eq "ALL" ]]; then
+  for t in templates/*; do
+    if [[ $t =~ "base16-"(.*) ]]; then
+      generate_template ${BASH_REMATCH[1]}
+    fi
+  done
+else
+  generate_template ${TEMPLATE}
+fi
