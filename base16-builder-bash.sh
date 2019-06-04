@@ -52,7 +52,7 @@ function parse_yaml {
       vname[indent] = $2;
       for (i in vname) {if (i > indent) {delete vname[i]}}
       if (length($3) > 0) {
-         vn=""; for (i=0; i<indent; i++) {vn=(vn)(toupper(vname[i]))("_")}
+         vn=""; for (i=0; i<indent; i++) {if (length(vname[i]) > 1) {vn=(vn)(toupper(vname[i]))("_")}}
          printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, toupper($2), $3);
       }
    }'
@@ -94,17 +94,16 @@ function shellify_base16_template () {
 
 # read $TEMPLATE extension
 function get_extension() {
-  TEMPLATE_CONFIG="templates/"${TEMPLATE}"/templates/config.yaml"
-  parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_"
-  echo ${TEMPLATE_DEFAULT_EXTENSION}
+  TEMPLATE_CONFIG="templates/base16-"${TEMPLATE}"/templates/config.yaml"
+  eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_")
+  printf "%s\n" ${TEMPLATE_DEFAULT_EXTENSION}
 }
 
 eval $(parse_yaml ${SCHEME_FILE} "SCHEME_")
 eval $(parse_scheme_options)
 
 EXTENSION=$(get_extension ${TEMPLATE})
-echo ${EXTENSION}
-exit 0
-shellify_base16_template $TEMPLATE > /tmp/template
-./lib/mo /tmp/template > ${TEMPLATE}.${EXTENSION}
+TEMPLATE_FILE="templates/base16-"${TEMPLATE}"/templates/default.mustache"
+shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
+./lib/mo /tmp/template > ${SCHEME}${EXTENSION}
 
