@@ -110,7 +110,6 @@ function shellify_base16_template () {
 # generate template
 function generate_template () {
   TEMPLATE_CONFIG="templates/base16-"$1"/templates/config.yaml"
-  echo ${TEMPLATE_CONFIG}
   eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_" "true")
  
   for l in $(parse_yaml ${TEMPLATE_CONFIG} "" "false"); do
@@ -118,7 +117,6 @@ function generate_template () {
     template_config_line=( $(echo $l | sed -e "s|^\(.*\)_\(.*\)=\"\(.*\)\"|\1;\2;\3|g") )
     IFS=$'\n'
     if [[ "${template_config_line[1]}" == "extension" ]]; then
-      echo "${template_config_line[1]}"
       TEMPLATE_FILE="templates/base16-"$1"/templates/"${template_config_line[0]}".mustache"
       shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
       ./lib/mo /tmp/template > "build/${SCHEME}/base16-${1}${template_config_line[2]}"
