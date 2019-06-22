@@ -42,7 +42,8 @@ fi
 # remove comment with https://stackoverflow.com/questions/4798149/
 function parse_yaml {
    local prefix=$2
-   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   local shellify=$3
+   local s='[[:space:]]*' w='[a-zA-Z0-9_-]*' fs=$(echo @|tr @ '\034')
    sed -e "s|#.*||g" \
       -ne "s|^\($s\):|\1|" \
        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
@@ -50,10 +51,24 @@ function parse_yaml {
    awk -F$fs '{
       indent = length($1)/2;
       vname[indent] = $2;
-      for (i in vname) {if (i > indent) {delete vname[i]}}
+      for (i in vname) {
+        if (i > indent) {
+          delete vname[i]
+        }
+      }
       if (length($3) > 0) {
-         vn=""; for (i=0; i<indent; i++) {if (length(vname[i]) > 1) {vn=(vn)(toupper(vname[i]))("_")}}
-         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, toupper($2), $3);
+        vn=""; 
+        for (i=0; i<indent; i++) {
+          if (length(vname[i]) > 1) {
+            vn=(vn)(vname[i])("_")
+          }
+        }
+        if("true" == "'$shellify'") {
+          gsub(/-/, "_", vn)
+          printf("%s%s%s=\"%s\"\n", "'$prefix'", toupper(vn), toupper($2), $3);
+        } else {
+          printf("%s%s%s=\"%s\"\n", "'$prefix'", vn, $2, $3);
+        }
       }
    }'
 }
@@ -92,23 +107,27 @@ function shellify_base16_template () {
       -e "s|{{\([^}]*\)|{{\U\1|g" $1
 }
 
-# read $TEMPLATE extension
-function get_extension() {
-  TEMPLATE_CONFIG="templates/base16-"$1"/templates/config.yaml"
-  eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_")
-  printf "%s\n" ${TEMPLATE_DEFAULT_EXTENSION}
-}
-
 # generate template
 function generate_template () {
-  EXTENSION=$(get_extension $1)
-  TEMPLATE_FILE="templates/base16-"$1"/templates/default.mustache"
-  shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
-  ./lib/mo /tmp/template > ${SCHEME}${EXTENSION}
+  TEMPLATE_CONFIG="templates/base16-"$1"/templates/config.yaml"
+  echo ${TEMPLATE_CONFIG}
+  eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_" "true")
+ 
+  for l in $(parse_yaml ${TEMPLATE_CONFIG} "" "false"); do
+    IFS=$';'
+    template_config_line=( $(echo $l | sed -e "s|^\(.*\)_\(.*\)=\"\(.*\)\"|\1;\2;\3|g") )
+    IFS=$'\n'
+    if [[ "${template_config_line[1]}" == "extension" ]]; then
+      echo "${template_config_line[1]}"
+      TEMPLATE_FILE="templates/base16-"$1"/templates/"${template_config_line[0]}".mustache"
+      shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
+      ./lib/mo /tmp/template > "build/${SCHEME}/base16-${1}${template_config_line[2]}"
+    fi
+  done
 }
 
 # load scheme file
-eval $(parse_yaml ${SCHEME_FILE} "SCHEME_")
+eval $(parse_yaml ${SCHEME_FILE} "SCHEME_" "true")
 
 # generate mustache variables
 eval $(parse_scheme_options)
@@ -117,9 +136,11 @@ eval $(parse_scheme_options)
 if [[ ${TEMPLATE} -eq "ALL" ]]; then
   for t in templates/*; do
     if [[ $t =~ "base16-"(.*) ]]; then
+      mkdir -p build/${SCHEME}/
       generate_template ${BASH_REMATCH[1]}
     fi
   done
 else
+  mkdir -p build/${SCHEME}/
   generate_template ${TEMPLATE}
 fi
