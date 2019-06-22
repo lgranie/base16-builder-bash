@@ -33,10 +33,15 @@ else
   SCHEME_FILE=$(find schemes/ -name "${SCHEME}*" -print)
 fi
 
-# analyse TEMPLATE
+# set TEMPLATE
 if [ -z $TEMPLATE ]; then
   TEMPLATE="ALL";
 fi
+
+# set OUTPUT_DIR
+if [ -z $OUTPUT_DIR ]; then
+  OUTPUT_DIR="build";
+fi  
 
 # function found here https://stackoverflow.com/questions/5014632/
 # remove comment with https://stackoverflow.com/questions/4798149/
@@ -119,7 +124,7 @@ function generate_template () {
     if [[ "${template_config_line[1]}" == "extension" ]]; then
       TEMPLATE_FILE="templates/base16-"$1"/templates/"${template_config_line[0]}".mustache"
       shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
-      ./lib/mo /tmp/template > "build/${SCHEME}/base16-${1}${template_config_line[2]}"
+      ./lib/mo /tmp/template > "${OUTPUT_DIR}/${SCHEME}/base16-${1}${template_config_line[2]}"
     fi
   done
 }
@@ -131,14 +136,13 @@ eval $(parse_yaml ${SCHEME_FILE} "SCHEME_" "true")
 eval $(parse_scheme_options)
 
 # generate template(s)
+mkdir -p ${OUTPUT_DIR}/${SCHEME}/
 if [[ ${TEMPLATE} -eq "ALL" ]]; then
   for t in templates/*; do
     if [[ $t =~ "base16-"(.*) ]]; then
-      mkdir -p build/${SCHEME}/
       generate_template ${BASH_REMATCH[1]}
     fi
   done
 else
-  mkdir -p build/${SCHEME}/
   generate_template ${TEMPLATE}
 fi
