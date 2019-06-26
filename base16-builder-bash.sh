@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function usage() {
-  printf "base16-builder-bash -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR]\n"
+  printf "base16-builder-bash -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR] -u\n"
 }
 
 if [ $# -eq 0 ]; then
@@ -14,6 +14,9 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       usage;
       exit 0;;
+    -u|--update)
+      UPDATE="TRUE";
+      shift 1;; 
     -s|--scheme)
       SCHEME="$2";
       shift 2;;
@@ -23,14 +26,24 @@ while [[ $# -gt 0 ]]; do
     -o|--output)
       OUTPUT_DIR="$2";
       shift 2;;
+    -c|--config_dir)
+      CONFIG_DIR="$2";
+      shift 2;;
   esac;
 done
+
+# set CONFIG_DIR
+if [ -z $CONFIG_DIR ]; then
+  CONFIG_DIR=$HOME/.config/base16-builder-bash
+fi
+SCHEMES_DIR="${CONFIG_DIR}/schemes/"
+TEMPLATES_DIR="${CONFIG_DIR}/templates/"
 
 # default values and additionnals arguments
 if [ -z $SCHEME ]; then
   SCHEME_FILE="ALL";
 else
-  SCHEME_FILE=$(find schemes/ -name "${SCHEME}*" -print)
+  SCHEME_FILE=$(find ${SCHEMES_DIR} -name "${SCHEME}*" -print)
 fi
 
 # set TEMPLATE
@@ -40,7 +53,7 @@ fi
 
 # set OUTPUT_DIR
 if [ -z $OUTPUT_DIR ]; then
-  OUTPUT_DIR="build";
+  OUTPUT_DIR=$HOME/.config/base16/themes
 fi  
 
 # function found here https://stackoverflow.com/questions/5014632/
@@ -112,9 +125,22 @@ function shellify_base16_template () {
       -e "s|{{\([^}]*\)|{{\U\1|g" $1
 }
 
+# update schemes and templates
+function update_git () {
+  cd $1
+  for s in $(parse_yaml "./list.yaml" "" "false"); do
+    IFS=$';'
+    scheme_git=( $(echo $s | sed -e "s|^\(.*\)=\"\(.*\)\"|\1;\2|g") )
+    IFS=$'\n'
+    git submodule add  ${scheme_git[1]} ${scheme_git[0]}
+  done
+  git submodule init
+  git submodule update
+}
+
 # generate template
 function generate_template () {
-  TEMPLATE_CONFIG="templates/base16-"$1"/templates/config.yaml"
+  TEMPLATE_CONFIG="${TEMPLATES_DIR}${1}/templates/config.yaml"
   eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_" "true")
  
   for l in $(parse_yaml ${TEMPLATE_CONFIG} "" "false"); do
@@ -122,12 +148,19 @@ function generate_template () {
     template_config_line=( $(echo $l | sed -e "s|^\(.*\)_\(.*\)=\"\(.*\)\"|\1;\2;\3|g") )
     IFS=$'\n'
     if [[ "${template_config_line[1]}" == "extension" ]]; then
-      TEMPLATE_FILE="templates/base16-"$1"/templates/"${template_config_line[0]}".mustache"
+      TEMPLATE_FILE="${TEMPLATES_DIR}$1/templates/"${template_config_line[0]}".mustache"
       shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
       ./lib/mo /tmp/template > "${OUTPUT_DIR}/${SCHEME}/base16-${1}${template_config_line[2]}"
     fi
   done
 }
+
+# update git repositories in schemes and templates
+if [[ ${UPDATE} == "TRUE" ]]; then
+  update_git ${TEMPLATES_DIR}
+  update_git ${SCHEMES_DIR}
+  exit 0;
+fi
 
 # load scheme file
 eval $(parse_yaml ${SCHEME_FILE} "SCHEME_" "true")
@@ -138,8 +171,8 @@ eval $(parse_scheme_options)
 # generate template(s)
 mkdir -p ${OUTPUT_DIR}/${SCHEME}/
 if [[ ${TEMPLATE} -eq "ALL" ]]; then
-  for t in templates/*; do
-    if [[ $t =~ "base16-"(.*) ]]; then
+  for t in ${TEMPLATES_DIR}*; do
+    if [[ -d $t && $t =~ ${TEMPLATES_DIR}(.*) ]]; then
       generate_template ${BASH_REMATCH[1]}
     fi
   done
