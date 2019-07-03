@@ -125,17 +125,22 @@ function shellify_base16_template () {
       -e "s|{{\([^}]*\)|{{\U\1|g" $1
 }
 
-# update schemes and templates
+# update schemes or templates
 function update_git () {
   cd $1
   for s in $(parse_yaml "./list.yaml" "" "false"); do
     IFS=$';'
     scheme_git=( $(echo $s | sed -e "s|^\(.*\)=\"\(.*\)\"|\1;\2|g") )
     IFS=$'\n'
-    git submodule add  ${scheme_git[1]} ${scheme_git[0]}
+    if [ -d ${scheme_git[0]} ]; then
+      cd ${scheme_git[0]}
+      git fetch && git pull
+      cd ..
+    else
+      git clone  ${scheme_git[1]} ${scheme_git[0]}
+    fi
   done
-  git submodule init
-  git submodule update
+  cd ..
 }
 
 # generate template
