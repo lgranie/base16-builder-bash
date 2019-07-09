@@ -154,18 +154,21 @@ function generate_template () {
     IFS=$'\n'
     if [[ "${template_config_line[1]}" == "extension" ]]; then
       TEMPLATE_FILE="${TEMPLATES_DIR}$1/templates/"${template_config_line[0]}".mustache"
-      TEMPLATE_OUTPUT_EXT=${template_config_line[2]}
+      TEMPLATE_OUTPUT="base16${template_config_line[2]}"
+    elif [[ "${template_config_line[1]}" == "filename" ]]; then
+      TEMPLATE_FILE="${TEMPLATES_DIR}$1/templates/"${template_config_line[0]}".mustache"
+      TEMPLATE_OUTPUT="${template_config_line[2]}"
     elif [[ "${template_config_line[1]}" == "output" ]]; then
       TEMPLATE_OUTPUT_DIR="${OUTPUT_DIR}/${SCHEME}/${template_config_line[2]}"
     fi
     
-    if [[ -n ${TEMPLATE_FILE} && -n ${TEMPLATE_OUTPUT_DIR} && -n ${TEMPLATE_OUTPUT_EXT} ]]; then
+    if [[ -n ${TEMPLATE_FILE} && -n ${TEMPLATE_OUTPUT_DIR} && -n ${TEMPLATE_OUTPUT} ]]; then
       mkdir -p ${TEMPLATE_OUTPUT_DIR} 
       shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
-      ./lib/mo /tmp/template > "${TEMPLATE_OUTPUT_DIR}/base16${TEMPLATE_OUTPUT_EXT}"
+      ./lib/mo /tmp/template > "${TEMPLATE_OUTPUT_DIR}/${TEMPLATE_OUTPUT}"
       unset TEMPLATE_FILE
       unset TEMPLATE_OUTPUT_DIR
-      unset TEMPLATE_OUTPUT_EXT
+      unset TEMPLATE_OUTPUT
     fi
   done
 }
