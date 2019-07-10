@@ -7,15 +7,15 @@ Requires BASH 5.0 or greater.
 #### Specify $OUTPUT_DIR
     By default, $OUTPUT_DIR is ~/.config/base16/{{scheme-name}}
     So you can install your generated schemes with stow like :
-        ```
+```
         cd ~/.config/base16
         stow -t ~/ gruvbox-dark-hard
-        ```
+```
     And uninstall a full scheme with this kind of command:
-        ```
+```
         cd ~/.config/base16
         stow -t ~/ -D gruvbox-dark-hard
-        ```
+```
 #### Use "filename" instead of "extension"
     By default, a mustache template output is {{scheme-name}}-{{extension}}.
     If you define your entry in $CONFIG_DIR/templates/{{template}}/templates/config.yaml like in [https://github.com/lgranie/base16-powerline/blob/master/templates/config.yaml] :
