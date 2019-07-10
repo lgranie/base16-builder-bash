@@ -10,7 +10,7 @@ Requires BASH 5.0 or greater.
 ## Usage
 
     ./base16-builder-bash.sh -u|--update
-Updates all schemes and templates repositories as defined in $CONFIG_DIR/schemes/`schemes.yaml` and $CONFIG_DIR/templates/`templates.yaml`.
+Updates all schemes and templates repositories as defined in $CONFIG_DIR/schemes/`list.yaml` and $CONFIG_DIR/templates/`list.yaml`.
 
     ./base16-builder-bash.sh -s|--scheme [SCHEME]
 Build all templates using $SCHEME
