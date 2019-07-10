@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
+pushd "$dir";
+
 function usage() {
   printf "base16-builder-bash -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR] -u\n"
 }
@@ -196,3 +199,6 @@ if [[ ${TEMPLATE} -eq "ALL" ]]; then
 else
   generate_template ${TEMPLATE}
 fi
+
+popd > /dev/null
+
