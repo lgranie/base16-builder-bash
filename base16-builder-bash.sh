@@ -37,7 +37,7 @@ done
 
 # set CONFIG_DIR
 if [ -z $CONFIG_DIR ]; then
-  CONFIG_DIR="${HOME}/.config/base16-builder-bash"
+  CONFIG_DIR="${HOME}/.config/base16-builder"
 fi
 SCHEMES_DIR="${CONFIG_DIR}/schemes"
 TEMPLATES_DIR="${CONFIG_DIR}/templates"
@@ -54,7 +54,7 @@ fi
 
 # set OUTPUT_DIR
 if [ -z $OUTPUT_DIR ]; then
-  OUTPUT_DIR="${HOME}/.config/base16"
+  OUTPUT_DIR="${HOME}/.base16"
 fi  
 
 # function found here https://stackoverflow.com/questions/5014632/
