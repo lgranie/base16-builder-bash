@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
-pushd "$dir";
+pushd "$dir" > /dev/null
 
 function usage() {
   printf "base16-builder-bash -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR] -u\n"
@@ -37,16 +37,14 @@ done
 
 # set CONFIG_DIR
 if [ -z $CONFIG_DIR ]; then
-  CONFIG_DIR=$HOME/.config/base16-builder-bash
+  CONFIG_DIR="${HOME}/.config/base16-builder-bash"
 fi
-SCHEMES_DIR="${CONFIG_DIR}/schemes/"
-TEMPLATES_DIR="${CONFIG_DIR}/templates/"
+SCHEMES_DIR="${CONFIG_DIR}/schemes"
+TEMPLATES_DIR="${CONFIG_DIR}/templates"
 
 # default values and additionnals arguments
 if [ -z $SCHEME ]; then
-  SCHEME_FILE="ALL";
-else
-  SCHEME_FILE=$(find ${SCHEMES_DIR} -name "${SCHEME}*" -print)
+  SCHEME="ALL";
 fi
 
 # set TEMPLATE
@@ -56,7 +54,7 @@ fi
 
 # set OUTPUT_DIR
 if [ -z $OUTPUT_DIR ]; then
-  OUTPUT_DIR=$HOME/.config/base16
+  OUTPUT_DIR="${HOME}/.config/base16"
 fi  
 
 # function found here https://stackoverflow.com/questions/5014632/
@@ -135,6 +133,7 @@ function update_git () {
     IFS=$';'
     scheme_git=( $(echo $s | sed -e "s|^\(.*\)=\"\(.*\)\"|\1;\2|g") )
     IFS=$'\n'
+    echo "Updating "${scheme_git[0]}
     if [ -d ${scheme_git[0]} ]; then
       cd ${scheme_git[0]}
       git fetch && git pull
@@ -148,7 +147,8 @@ function update_git () {
 
 # generate template
 function generate_template () {
-  TEMPLATE_CONFIG="${TEMPLATES_DIR}${1}/templates/config.yaml"
+  echo "  Generating template "$1
+  TEMPLATE_CONFIG="${TEMPLATES_DIR}/${1}/templates/config.yaml"
   eval $(parse_yaml ${TEMPLATE_CONFIG} "TEMPLATE_" "true")
  
   for l in $(parse_yaml ${TEMPLATE_CONFIG} "" "false"); do
@@ -156,24 +156,47 @@ function generate_template () {
     template_config_line=( $(echo $l | sed -e "s|^\(.*\)_\(.*\)=\"\(.*\)\"|\1;\2;\3|g") )
     IFS=$'\n'
     if [[ "${template_config_line[1]}" == "extension" ]]; then
-      TEMPLATE_FILE="${TEMPLATES_DIR}$1/templates/"${template_config_line[0]}".mustache"
+      TEMPLATE_FILE="${TEMPLATES_DIR}/$1/templates/"${template_config_line[0]}".mustache"
       TEMPLATE_OUTPUT="base16${template_config_line[2]}"
     elif [[ "${template_config_line[1]}" == "filename" ]]; then
-      TEMPLATE_FILE="${TEMPLATES_DIR}$1/templates/"${template_config_line[0]}".mustache"
+      TEMPLATE_FILE="${TEMPLATES_DIR}/$1/templates/"${template_config_line[0]}".mustache"
       TEMPLATE_OUTPUT="${template_config_line[2]}"
     elif [[ "${template_config_line[1]}" == "output" ]]; then
-      TEMPLATE_OUTPUT_DIR="${OUTPUT_DIR}/${SCHEME}/${template_config_line[2]}"
+      TEMPLATE_OUTPUT_DIR="${OUTPUT_DIR}/$2/${template_config_line[2]}"
     fi
     
     if [[ -n ${TEMPLATE_FILE} && -n ${TEMPLATE_OUTPUT_DIR} && -n ${TEMPLATE_OUTPUT} ]]; then
       mkdir -p ${TEMPLATE_OUTPUT_DIR} 
-      shellify_base16_template ${TEMPLATE_FILE} > /tmp/template
-      ./lib/mo /tmp/template > "${TEMPLATE_OUTPUT_DIR}/${TEMPLATE_OUTPUT}"
+      shellify_base16_template ${TEMPLATE_FILE} |  mo > "${TEMPLATE_OUTPUT_DIR}/${TEMPLATE_OUTPUT}"
       unset TEMPLATE_FILE
       unset TEMPLATE_OUTPUT_DIR
       unset TEMPLATE_OUTPUT
     fi
   done
+}
+
+# generate_scheme
+function generate_scheme () {
+  echo "Using scheme "$1
+
+  SCHEME_FILE=$(find ${SCHEMES_DIR} -name "$1*" -print)
+  
+  # load scheme file
+  eval $(parse_yaml ${SCHEME_FILE} "SCHEME_" "true")
+
+  # generate mustache variables
+  eval $(parse_scheme_options)
+
+  # generate template(s)
+  if [[ ${TEMPLATE} = "ALL" ]]; then
+    for t in ${TEMPLATES_DIR}/*; do
+      if [[ -d $t && $t =~ ${TEMPLATES_DIR}/(.*) ]]; then
+        generate_template ${BASH_REMATCH[1]} $1
+      fi
+    done
+  else
+    generate_template ${TEMPLATE} $1
+  fi
 }
 
 # update git repositories in schemes and templates
@@ -183,21 +206,21 @@ if [[ ${UPDATE} == "TRUE" ]]; then
   exit 0;
 fi
 
-# load scheme file
-eval $(parse_yaml ${SCHEME_FILE} "SCHEME_" "true")
+# load mustache bash renderer
+. ./lib/mo
 
-# generate mustache variables
-eval $(parse_scheme_options)
-
-# generate template(s)
-if [[ ${TEMPLATE} -eq "ALL" ]]; then
-  for t in ${TEMPLATES_DIR}*; do
-    if [[ -d $t && $t =~ ${TEMPLATES_DIR}(.*) ]]; then
-      generate_template ${BASH_REMATCH[1]}
+if [[ ${SCHEME} = "ALL" ]]; then
+  for sd in ${SCHEMES_DIR}/*; do
+    if [[ -d ${sd} ]]; then
+      for s in ${sd}/*.yaml; do
+        if [[ $s =~ ${sd}/(.*).yaml ]]; then
+          generate_scheme ${BASH_REMATCH[1]}
+        fi
+      done
     fi
   done
 else
-  generate_template ${TEMPLATE}
+  generate_scheme ${SCHEME}
 fi
 
 popd > /dev/null
