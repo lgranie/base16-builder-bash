@@ -7,11 +7,11 @@ Requires BASH 5.0 or greater.
 #### Specify $OUTPUT_DIR
     By default, $OUTPUT_DIR is ~/.config/base16/{{scheme-name}}
     So you can install your generated schemes with stow like :
-        cd ~/.config/base16
-        stow -t ~/ gruvbox-dark-hard
+        cd ~/.base16
+        stow gruvbox-dark-hard
     And uninstall a full scheme with this kind of command:
-        cd ~/.config/base16
-        stow -t ~/ -D gruvbox-dark-hard
+        cd ~/.base16
+        stow -D gruvbox-dark-hard
 
 #### Use "filename" instead of "extension"
     By default, a mustache template output is {{scheme-name}}-{{extension}}.
@@ -44,7 +44,7 @@ Build $TEMPLATE using $SCHEME
 Specify $OUTPUT_DIR (default is ~/.config/base16)
 
     ./base16-builder-bash.sh -c|--config_dir
-Specify $CONFIG_DIR (default is ~/.config/base16-builder-bash)
+Specify $CONFIG_DIR (default is ~/.config/base16-builder)
 
 ## Why BASH?
 'Cause bash is everywhere ^^
