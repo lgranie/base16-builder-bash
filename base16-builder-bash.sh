@@ -179,7 +179,7 @@ function generate_template () {
 function generate_scheme () {
   echo "Using scheme "$1
 
-  SCHEME_FILE=$(find ${SCHEMES_DIR} -name "$1*" -print)
+  SCHEME_FILE=$(find ${SCHEMES_DIR} -name "$1*" -type f -print)
   
   # load scheme file
   eval $(parse_yaml ${SCHEME_FILE} "SCHEME_" "true")
