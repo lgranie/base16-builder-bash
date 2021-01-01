@@ -4,7 +4,7 @@ dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 pushd "$dir" > /dev/null
 
 function usage() {
-  printf "base16-builder-bash -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR] -u\n"
+  printf "base16-builder-bash -d [DEPTH] -s [SCHEME] -t [TEMPLATE] -o [OUTPUT_DIR] -u\n"
 }
 
 if [ $# -eq 0 ]; then
@@ -32,6 +32,9 @@ while [[ $# -gt 0 ]]; do
     -c|--config_dir)
       CONFIG_DIR="$2";
       shift 2;;
+    -d24|--depth24)
+      DEPTH=21;
+      shift 1;;
   esac;
 done
 
@@ -55,7 +58,12 @@ fi
 # set OUTPUT_DIR
 if [ -z $OUTPUT_DIR ]; then
   OUTPUT_DIR="${HOME}/.base16"
-fi  
+fi 
+
+# set DEPTH
+if [ -z $DEPTH ]; then
+  DEPTH=15
+fi
 
 # function found here https://stackoverflow.com/questions/5014632/
 # remove comment with https://stackoverflow.com/questions/4798149/
@@ -97,7 +105,7 @@ function parse_scheme_options {
   printf "export SCHEME_NAME=\"${SCHEME_SCHEME}\"\n";
   printf "export SCHEME_AUTHOR=\"${SCHEME_AUTHOR}\"\n";
   
-  for n in $(seq 0 15); do
+  for n in $(seq 0 ${DEPTH}); do
      local hex=$(printf "%02X" ${n})
      local scheme_var="SCHEME_BASE${hex}"
 
